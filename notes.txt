@@ -1,0 +1,88 @@
+RUST RISCV
+A Rust implementation of a RISC-V core.
+
+Tests are defined at the below link:
+git clone https://github.com/riscv/riscv-tests
+
+RISC-V is specified here:
+https://riscv.org/wp-content/uploads/2019/12/riscv-spec-20191213.pdf
+
+A component is termed a core if it contains an independent instruction fetch
+unit. A RISC-V compatible core might support multiple RISC-V-compatible hardware threads, or harts, through multithreading.
+
+GeoHot impl
+
+George defines registers to store values, based on the naming of registers from
+the RISC impl. Defines them as a generator.
+
+Defines the memory address space not sure how you decide how much memory is
+needed.
+
+Defines the instructions as an Enum, and defines them all as binary strings.
+
+Defines the Funct3 as an Enum, not sure what funct3 is
+
+defines an method to write to the memory
+defines a method to read from the memory.
+defines a method to pretty print the registers.
+defines a method to sign_extend, what is sign extension?
+
+Sign extension is the operation in computer arithmetic of increasing the number
+of bits of a binary number while preserving the numbers sign and value. This is
+done by appending digits to the most significant side of the number, following a
+procedure dependent on the particular signed number repr used.
+
+For example, if six bits are used to represent the number "00 1010" (decimal
+positive 10) and the sign extend operation increases the word length to 16 bits,
+then the new representation is simply "0000 0000 0000 1010". Thus, both the
+value and the fact that the value was positive are maintainedDefines the
+instructions as an Enum, and defines them all as binary strings.
+
+Defines the Funct3 as an Enum, not sure what funct3 is
+
+defines an method to write to the memory
+defines a method to read from the memory.
+defines a method to pretty print the registers.
+
+Sign Extension
+--------------
+Sign extension is the operation in computer arithmetic of increasing the number
+of bits of a binary number while preserving the numbers sign and value. This is
+done by appending digits to the most significant side of the number, following a
+procedure dependent on the particular signed number repr used.
+
+For example, if six bits are used to represent the number "00 1010" (decimal
+positive 10) and the sign extend operation increases the word length to 16 bits,
+then the new representation is simply "0000 0000 0000 1010". Thus, both the
+value and the fact that the value was positive are maintained.
+
+Defines arithmetic function, which takes in the opcode, the operands, and alt?
+Defines conditional function, which takes in the opcode and the 2 operands.
+
+Defines the step function, which steps through the test line by line and
+performs a fetch decode execute cycle. 
+
+Defines gibi, which is a get bits function, which gets the required bit ranges
+from the 32 bit instruction.
+
+Looks pretty simple overall.
+
+At the end of each risc-v test, we should see OK\n or ERR\n in register a0-a3
+
+33 Registers is the standard x0-x31 + PC register.
+A link register is a special-purpose register which holds the address to return to when a function call completes. 
+
+
+Register	ABI Name			Description						Saver
+x0			  zero			hardwired zero						-
+x1			  ra			return address						Caller
+x2			  sp			stack pointer						Callee
+x3			  gp			global pointer						-
+x4			  tp			thread pointer						-
+x5-7		 t0-2			temporary registers					Caller
+x8			s0 / fp			saved register / frame pointer		Callee
+x9			  s1			saved register						Callee
+x10-11		  a0-1			function arguments / return values	Caller
+x12-17		  a2-7			function arguments					Caller
+x18-27		  s2-11			saved registers						Callee
+x28-31		  t3-6			temporary registers					Caller
