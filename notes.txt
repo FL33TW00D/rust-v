@@ -1,6 +1,9 @@
 RUST RISCV
 A Rust implementation of a RISC-V core.
 
+Another IMPL: https://github.com/sylefeb/Silice/tree/draft/projects/ice-v
+Basic notes here: https://stackoverflow.com/questions/51592244/implementation-of-simple-microprocessor-using-verilog
+
 Tests are defined at the below link:
 git clone https://github.com/riscv/riscv-tests
 
@@ -11,7 +14,6 @@ A component is termed a core if it contains an independent instruction fetch
 unit. A RISC-V compatible core might support multiple RISC-V-compatible hardware threads, or harts, through multithreading.
 
 GeoHot impl
-
 George defines registers to store values, based on the naming of registers from
 the RISC impl. Defines them as a generator.
 
