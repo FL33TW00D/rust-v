@@ -8,22 +8,79 @@ pub const REGISTER_NAMES: [&str; 32] = [
     "t5", "t6",
 ];
 
-pub enum INST {
-    ///U-type
+#[cfg_eval(rustfmt, rustfmt_skip)]
+pub enum OpCode {
     LUI = 0x37,
-    LO
-
-    AUIPC,
-    BRANCH,
-    JAL,
-    JALR,
-
-    IMM,
-    OP,
-
-    MISC,
-    SYSTEM,
+    AUIPC = 0x17,
+    JAL = 0x6F,
+    JALR = 0x67,
+    BRANCH = 0x63,
+    LOAD = 0x03,
+    STORE = 0x23,
+    IMM = 0x13,
+    OP = 0x33,
+    FENCE = 0x0F,
+    EX = 0x73,
 }
+
+#[cfg_eval(rustfmt, rustfmt_skip)]
+pub enum Funct3 {
+    ADD = 0x0,
+    SUB = 0x0,
+    ADDI = 0x0,
+    SLLI = 0x1,
+    SLT = 0x2,
+    SLTI = 0x2,
+    SLTU = 0x3,
+    SLTUI = 0x3,
+    
+    XOR = 0x4,
+    XORI = 0x4,
+    
+    SRL = 0x5,
+    SRLI = 0x5,
+    SRA = 0x5,
+    SRAI = 0x5,
+    
+    OR = 0x6,
+    ORI = 0x6,
+    AND = 0x7,
+    ANDI = 0x7,
+    
+    BEQ = 0x0,
+    BNE = 0x1,
+    BLT = 0x4,
+    BGE = 0x5,
+    BLTU = 0x6,
+    BGEU = 0x7,
+
+    LB = 0x0,
+    SB = 0x0,
+    LH = 0x1,
+    SH = 0x1,
+    LW = 0x2,
+    SW = 0x2,
+    LBU = 0x4,
+    LHU = 0x5,
+
+}
+
+#[cfg_eval(rustfmt, rustfmt_skip)]
+pub enum Funct7 {
+    SLLI = 0x00,
+    SRLI = 0x00,
+    SRAI = 0x10,
+    SLLIW = 0x00,
+    SRLIW = 0x00,
+    SRAIW = 0x10,
+    ADDW = 0x00,
+    SUBW = 0x20,
+    SLLW = 0x00,
+    SRLW = 0x00,
+    SRAW = 0x20,
+}
+
+
 struct CPU {
     regfile: [u64; 32],
     pc: u64,
@@ -48,9 +105,9 @@ impl CPU {
 
     fn get_bits(inst: u32) {}
 
-    fn fetch(&self) {}
+    fn fetch(&self) -> Result<u64> {}
 
-    fn execute(&self) {}
+    fn execute(&self, inst: u64) {}
 
     pub fn dump_registers(&self) {
         for (regidx, reg) in self.regfile.iter().enumerate() {
