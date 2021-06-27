@@ -1,7 +1,12 @@
+mod instruction;
+mod types;
+
+use instruction::*;
 use std::env;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use types::*;
 
 pub const MEMORY_SIZE: u64 = 1024 * 1024 * 128;
 
@@ -11,152 +16,10 @@ pub const REGISTER_NAMES: [&str; 32] = [
     "t5", "t6",
 ];
 
-pub enum Instruction {
-    //RV32I
-    LUI,
-    AUIPC,
-    JAL,
-    JALR,
-    BEQ,
-    BNE,
-    BLT,
-    BGE,
-    BLTU,
-    BGEU,
-    LB,
-    LH,
-    LW,
-    LBU,
-    LHU,
-    SB,
-    SH,
-    SW,
-    ADDI{
-        imm,
-        rs1,
-        rd,
-        opcode
-    },
-    SLTI,
-    SLTIU,
-    XORI,
-    ORI,
-    ADNI,
-    SLLI,
-    SRLI,
-    SRAI,
-    ADD{
-        rs2,
-        rs1,
-        rd,
-        opcode
-    },
-    SUB,
-    SLL,
-    SLT,
-    SLTU,
-    XOR,
-    SRL,
-    SRA,
-    OR,
-    AND,
-    FENCE,
-    ECALL,
-    EBREAK,
-
-    //RV64I
-    LWU,
-    LD,
-    SD,
-    ADDIW,
-    SLLIW,
-    SRLIW,
-    SRAIW,
-    ADDW,
-    SUBW,
-    SLLW,
-    SRLW,
-    SRAW,
-}
-
-pub enum Funct3 {
-    JAL,
-    JALR,
-    BEQ,
-    BNE,
-    BLT,
-    BGE,
-    BLTU,
-    BGEU,
-    LB,
-    LH,
-    LW,
-    LBU,
-    LHU,
-    SB,
-    SH,
-    SW,
-    ADDI,
-    SLTI,
-    SLTIU,
-    XORI,
-    ORI,
-    ADNI,
-    SLLI,
-    SRLI,
-    SRAI,
-    ADD,
-    SUB,
-    SLL,
-    SLT,
-    SLTU,
-    XOR,
-    SRL,
-    SRA,
-    OR,
-    AND,
-    FENCE,
-    ECALL,
-    EBREAK,
-
-    //RV64I
-    LWU,
-    LD,
-    SD,
-    ADDIW,
-    SLLIW,
-    SRLIW,
-    SRAIW,
-    ADDW,
-    SUBW,
-    SLLW,
-    SRLW,
-    SRAW,
-}
-
-pub enum Funct7 {
-    SLLI,
-    SRLI,
-    SRAI,
-    SLLIW,
-    SRLIW,
-    SRAIW,
-    ADDW,
-    SUBW,
-    SLLW,
-    SRLW,
-    SRAW,
-}
-
-
 struct CPU {
     regfile: [u64; 32],
     pc: u64,
     dram: Vec<u8>,
-}
-
-pub fn get_bits(inst: u32, start: u32, end: u32) -> u32 {
-    (inst >> end) & ((1 << (start - end + 1)) - 1)
 }
 
 fn step(cpu: &mut CPU) {
@@ -188,21 +51,39 @@ impl CPU {
             | ((self.dram[index + 3] as u32) << 24);
     }
 
-    pub fn decode(&mut self, inst: u32) -> Instruction {
-        //called decode for now but is actually executing, crazy right
-        let opcode = get_bits(inst, 6, 0);
-        let rd = get_bits(inst, 11, 7);
-        let rs1 = get_bits(inst, 19, 15) as usize;
-        let rs2 = get_bits(inst, 24, 20) as usize;
+    fn decode_load(&mut self, inst: u32) -> Instruction {
+        //funct3
+        match get_bits(inst, 14, 12) {
+            0b000 => Instruction::LB(IType(inst)),
+            0b001 => Instruction::LH(IType(inst)),
+            0b010 => Instruction::LW(IType(inst)),
+            0b100 => Instruction::LBU(IType(inst)),
+            0b101 => Instruction::LWU(IType(inst)),
+            0b101 => Instruction::LD(IType(inst)),
+            _ => panic!("Instruction read as a LOAD but no matching funct3 found.")
+        }
+    }
+    fn decode_op_imm(&mut self, inst: u32) -> Instruction {
+        match get_bits(inst, 14, 12) {
+            0b000 => Instruction::ADDI(IType(inst)),
+            _ => panic!("Instruction was a OP IMM but no matching funct3 found.")
+        }
+    }
+    fn decode_op(&mut self, inst: u32) -> Instruction {
+        match get_bits(inst, 14, 12) {
+            0b000 => Instruction::ADD(RType(inst)),
+            _ => panic!("Instruction was a OP IMM but no matching funct3 found.")
+        }
 
-        match opcode {
-            0x13 => { 
-                let imm = ((inst & 0xfff00000) as i32 as i64 >> 20);
-                Instruction::ADDI(imm, rs1, rd, opcode) 
-            },
-            0x33 => { 
-                Instruction::ADD(rs2, rs1,)
-            },
+    }
+
+    pub fn decode(&mut self, inst: u32) -> Instruction {
+        //Shifting right 2 since all opcodes 2 LSBs are 1
+        match inst >> 2 & 0b11111 {
+            0b00000 => self.decode_load(inst),
+            0b00100 => self.decode_op_imm(inst),
+            0b01100 => self.decode_op(inst),
+            _ => panic!("Decode not yet implemented for: {:#18x}", inst),
         }
     }
 
@@ -210,22 +91,24 @@ impl CPU {
     fn execute(&mut self, inst: u32) {
         self.regfile[0] = 0;
         let decoded: Instruction = self.decode(inst);
+        println!("EXECUTING: {:?}", decoded);
         match decoded {
-            Instruction::ADDI => {
-                self.regfile[rd] = self.regfile[rs1].wrapping_add(imm as u64);
+            Instruction::ADDI(decoded) => {
+                self.regfile[decoded.rd() as usize] = self.regfile[decoded.rs1() as usize].wrapping_add(decoded.imm() as u64);
             }
-            Instruction::ADD => {
-                self.regfile[rd] = self.regfile[rs1].wrapping_add(self.regfile[rs2]);
+            Instruction::ADD(decoded) => {
+                self.regfile[decoded.rd() as usize] = self.regfile[decoded.rs1() as usize].wrapping_add(self.regfile[decoded.rs2() as usize]);
             }
             _ => {
-                eprintln!("Not yet implemented: {:#x}", opcode);
+                eprintln!("Execute not yet implemented for: {:?}", decoded);
             }
         }
+        self.dump_registers();
     }
 
     pub fn dump_registers(&self) {
         for (regidx, reg) in self.regfile.iter().enumerate() {
-            print!("{:^4}\t {:#18x} \t", REGISTER_NAMES[regidx], reg);
+            print!("x{:^4}\t {:#18x} \t", regidx, reg);
             if (regidx + 1) % 4 == 0 {
                 println!("")
             }
@@ -246,7 +129,7 @@ fn main() -> io::Result<()> {
     let mut cpu = CPU::new(code);
 
     step(&mut cpu);
-    cpu.dump_registers();
+//    cpu.dump_registers();
 
     Ok(())
 }
