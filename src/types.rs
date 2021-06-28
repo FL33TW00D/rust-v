@@ -76,10 +76,10 @@ impl JType {
     }
     //Not so sure about this IMM here
     pub fn imm(&self) -> u32 {
-        (get_bits(self.0, 31, 31)
+        get_bits(self.0, 31, 31)
             | get_bits(self.0, 30, 21)
             | get_bits(self.0, 20, 20)
-            | get_bits(self.0, 19, 12))
+            | get_bits(self.0, 19, 12)
     }
 }
 
