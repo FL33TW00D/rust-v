@@ -60,21 +60,32 @@ impl CPU {
             0b100 => Instruction::LBU(IType(inst)),
             0b101 => Instruction::LWU(IType(inst)),
             0b101 => Instruction::LD(IType(inst)),
-            _ => panic!("Instruction read as a LOAD but no matching funct3 found.")
+            _ => panic!("Instruction read as a LOAD but no matching funct3 found."),
         }
     }
+
     fn decode_op_imm(&mut self, inst: u32) -> Instruction {
         match get_bits(inst, 14, 12) {
             0b000 => Instruction::ADDI(IType(inst)),
-            _ => panic!("Instruction was a OP IMM but no matching funct3 found.")
+            _ => panic!("Instruction was a OP IMM but no matching funct3 found."),
         }
     }
+
     fn decode_op(&mut self, inst: u32) -> Instruction {
         match get_bits(inst, 14, 12) {
             0b000 => Instruction::ADD(RType(inst)),
-            _ => panic!("Instruction was a OP IMM but no matching funct3 found.")
+            _ => panic!("Instruction was a OP IMM but no matching funct3 found."),
         }
-
+    }
+    
+    fn decode_store(&mut self, inst: u32) -> Instruction {
+        match get_bits(inst, 14, 12) {
+            0b000 => Instruction::SB(SType(inst)),
+            0b001 => Instruction::SH(SType(inst)),
+            0b010 => Instruction::SW(SType(inst)),
+            0b011 => Instruction::SD(SType(inst)),
+            _ => panic!("Instruction was a STORE but no matching funct3 found."),
+        }
     }
 
     pub fn decode(&mut self, inst: u32) -> Instruction {
@@ -83,6 +94,7 @@ impl CPU {
             0b00000 => self.decode_load(inst),
             0b00100 => self.decode_op_imm(inst),
             0b01100 => self.decode_op(inst),
+            0b01000 => self.decode_store(inst),
             _ => panic!("Decode not yet implemented for: {:#18x}", inst),
         }
     }
@@ -94,10 +106,12 @@ impl CPU {
         println!("EXECUTING: {:?}", decoded);
         match decoded {
             Instruction::ADDI(decoded) => {
-                self.regfile[decoded.rd() as usize] = self.regfile[decoded.rs1() as usize].wrapping_add(decoded.imm() as u64);
+                self.regfile[decoded.rd() as usize] =
+                    self.regfile[decoded.rs1() as usize].wrapping_add(decoded.imm() as u64);
             }
             Instruction::ADD(decoded) => {
-                self.regfile[decoded.rd() as usize] = self.regfile[decoded.rs1() as usize].wrapping_add(self.regfile[decoded.rs2() as usize]);
+                self.regfile[decoded.rd() as usize] = self.regfile[decoded.rs1() as usize]
+                    .wrapping_add(self.regfile[decoded.rs2() as usize]);
             }
             _ => {
                 eprintln!("Execute not yet implemented for: {:?}", decoded);
@@ -129,7 +143,7 @@ fn main() -> io::Result<()> {
     let mut cpu = CPU::new(code);
 
     step(&mut cpu);
-//    cpu.dump_registers();
+    //    cpu.dump_registers();
 
     Ok(())
 }
